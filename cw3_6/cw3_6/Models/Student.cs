@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace cw3.Models
+namespace cw3_6.Models
 {
     public class Student
     {
@@ -14,5 +14,10 @@ namespace cw3.Models
 
         public string IndexNumber { get; set; }
 
+        public DateTime BirthDate { get; set; }
+
+        public int IdEnrollment { get; set; }
+
     }
 }
+

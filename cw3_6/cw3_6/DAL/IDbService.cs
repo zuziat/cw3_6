@@ -1,8 +1,8 @@
-﻿using cw3.Models;
+﻿using cw3_6.Models;
 using System.Collections.Generic;
 
 
-namespace cw3.DAL
+namespace cw3_6.DAL
 {
     public interface IDbService
     {

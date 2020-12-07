@@ -1,6 +1,6 @@
 using System;
 
-namespace cw3
+namespace cw3_6
 {
     public class WeatherForecast
     {

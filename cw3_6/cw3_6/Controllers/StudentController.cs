@@ -1,5 +1,5 @@
-﻿using cw3.DAL;
-using cw3.Models;
+﻿using cw3_6.DAL;
+using cw3_6.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -24,6 +24,7 @@ namespace cw3.Controllers
         [HttpGet]
         public IActionResult GetStudent(string orderBy)
         {
+          
             return Ok(_dbService.GetStudents());
         }
 
@@ -55,7 +56,7 @@ namespace cw3.Controllers
 
         public IActionResult ModifyStudent(int id)
         {
-           
+
 
             return Ok("Aktualizacja dokończona");
 
@@ -72,3 +73,4 @@ namespace cw3.Controllers
 
     }
 }
+
