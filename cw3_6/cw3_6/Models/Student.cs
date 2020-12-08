@@ -14,10 +14,9 @@ namespace cw3_6.Models
 
         public string IndexNumber { get; set; }
 
-        public DateTime BirthDate { get; set; }
+        public string IdEnrollment { get; set; }
 
-        public int IdEnrollment { get; set; }
-
+      
     }
 }
 

@@ -3,6 +3,7 @@ using cw3_6.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -22,27 +23,93 @@ namespace cw3.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetStudent(string orderBy)
+        public IActionResult GetStudent()
         {
+            var list = new List<Student>();
+            using(var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18919;Integrated Security=True"))
+            using(var com = new SqlCommand())
+            {
+                com.Connection = con;
+                com.CommandText = "select * from Student";
+
+                con.Open();
+                SqlDataReader dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    var st = new Student();
+                    st.FirstName = dr["FirstName"].ToString();
+                    st.LastName = dr["LastName"].ToString();
+                    st.IndexNumber = dr["IndexNumber"].ToString();
+                    st.IdEnrollment = dr["IdEnrollment"].ToString();
+
+                    list.Add(st);
+                }
+                
+            }
           
-            return Ok(_dbService.GetStudents());
+            return Ok(list);
         }
+       // [HttpGet("{indexNumber}")]
 
-        [HttpGet("{id}")]
+        //public IActionResult GetStudent(string indexNumber)
+        //{
+        //    var list = new List<Student>();
+        //    using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18919;Integrated Security=True"))
+        //    using (var com = new SqlCommand())
+        //    {
+        //        com.Connection = con;
+        //        com.CommandText = "select * from Student where indexnumber='"+indexNumber+"'";
 
-        public IActionResult GetStudent(int id)
+        //        con.Open();
+        //        SqlDataReader dr = com.ExecuteReader();
+        //        if (dr.Read())
+        //        {
+        //            var st = new Student();
+        //            st.FirstName = dr["FirstName"].ToString();
+        //            st.LastName = dr["LastName"].ToString();
+        //            st.IndexNumber = dr["IndexNumber"].ToString();
+
+        //            return Ok(st);
+        //        }
+
+        //    }
+
+        //    return NotFound();
+        //}
+
+        [HttpGet("{indexNumber}")]
+
+        public IActionResult GetStudent(string indexNumber)
         {
-            if (id == 1)
+
+        
+
+            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18919;Integrated Security=True"))
+            using (var com = new SqlCommand())
             {
-                return Ok("Kowalski");
-            }
-            else if (id == 2)
-            {
-                return Ok("Malewski");
+                com.Connection = con;
+                com.CommandText = "select IdEnrollment from Student where indexnumber=@id";
+                //SqlParameter par = new SqlParameter();
+                //par.Value = indexNumber;
+                //par.ParameterName = "index";
+                com.Parameters.AddWithValue("index", indexNumber);
+
+                con.Open();
+                SqlDataReader dr = com.ExecuteReader();
+                if (dr.Read())
+                {
+                    var st = new Student();
+                    st.IdEnrollment = dr["IdEnrollment"].ToString();
+                    
+
+                    return Ok(st.IdEnrollment);
+                }
+
             }
 
-            return NotFound("Nie znaleziono studenta");
+            return NotFound();
         }
+
 
         [HttpPost]
 
