@@ -1,5 +1,6 @@
 ﻿using cw3_6.DTOs.Requests;
 using cw3_6.DTOs.Responses;
+using cw3_6.Models;
 using cw3_6.Models.DTOs.Requests;
 using cw3_6.Models.DTOs.Responses;
 using System;
@@ -13,5 +14,7 @@ namespace cw3_6.Services
     {
         EnrollStudentResponse EnrollStudent(EnrollStudentRequest request);
         PromoteStudentResponse PromoteStudents(PromoteStudentRequest request);
+
+        Student GetStudent(string IndexNumer);
     }
 }
