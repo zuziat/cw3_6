@@ -10,6 +10,7 @@ using cw3_6.Models.DTOs.Responses;
 using cw3_6.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace cw3_6.Controllers
 {
@@ -29,6 +30,7 @@ namespace cw3_6.Controllers
 
 
         [HttpPost]
+        [Authorize(Roles = "employee")]
         public IActionResult EnrollStudent(EnrollStudentRequest request)
         {
             _service.EnrollStudent(request);
@@ -41,6 +43,7 @@ namespace cw3_6.Controllers
         }
 
         [HttpPost("/api/enrollments/promotions")]
+        [Authorize(Roles = "employee")]
 
         public IActionResult PromoteStudents(PromoteStudentRequest request)
         {

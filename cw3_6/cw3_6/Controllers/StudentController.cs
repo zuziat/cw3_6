@@ -1,24 +1,34 @@
 ﻿using cw3_6.DAL;
+using cw3_6.DTOs.Requests;
 using cw3_6.Models;
+using cw3_6.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace cw3.Controllers
 {
 
     [ApiController]
     [Route("api/students")]
+    [Authorize]
     public class StudentsController : ControllerBase
     {
 
-        private readonly IDbService _dbService;
+        public IConfiguration Configuration { get; set; }
 
-        public StudentsController(IDbService dbService)
+        private readonly IStudentDbService _dbService;
+
+        public StudentsController(IConfiguration configuration, IStudentDbService dbService)
         {
+            Configuration = configuration;
             _dbService = dbService;
         }
 
@@ -135,6 +145,53 @@ namespace cw3.Controllers
         {
 
             return Ok("Usuwanie ukończone");
+
+        }
+
+        [HttpPost]
+        public IActionResult Login(LoginRequest request)
+        {
+            try
+            {
+                var response = _dbService.Login(request);
+
+                if (response != null)
+                {
+                    var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, response.Login),
+                new Claim(ClaimTypes.Role, "student")
+            };
+
+                    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]));
+                    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+                    var token = new JwtSecurityToken
+                    (
+                        //issuer: "Gakko",
+                        //audience: "Students",
+                        claims: claims,
+                        expires: DateTime.Now.AddMinutes(10),
+                        signingCredentials: creds
+                    );
+
+                    return Ok(new
+                    {
+                        token = new JwtSecurityTokenHandler().WriteToken(token),
+                        RefreshToken = Guid.NewGuid()
+                    });
+
+                }
+                else
+                {
+                    return Unauthorized();
+                }
+            }
+            catch (Exception exc)
+            {
+                return Unauthorized();
+            }
+
 
         }
 

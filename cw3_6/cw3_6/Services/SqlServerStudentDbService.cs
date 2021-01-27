@@ -16,55 +16,111 @@ namespace cw3_6.Services
         public EnrollStudentResponse EnrollStudent(EnrollStudentRequest request)
         {
             var st = new Student();
+            st.IndexNumber = request.IndexNumber;
             st.FirstName = request.FirstName;
+            st.LastName = request.LastName;
+            
+            var response = new EnrollStudentResponse();
+            bool success;
+            //int success;
+            DateTime date = DateTime.Today;
+            const string ConString = "Data Source=db-mssql;Initial Catalog=s18919;Integrated Security=True";
 
-
-            using (var con = new SqlConnection(""))
+            using (var con = new SqlConnection(ConString))
             using (var com = new SqlCommand())
             {
                 com.Connection = con;
+
                 con.Open();
                 var tran = con.BeginTransaction();
-                try
-                {
-                    com.CommandText = "select IdStudies from studies where name=@name";
-                    com.Parameters.AddWithValue("name", request.Studies);
 
-                    var dr = com.ExecuteReader();
-                    if (!dr.Read())
-                    {
-                        tran.Rollback();
-                        //  return BadRequest("Studia nie istnieją");
-                    }
-                    int idStudies = (int)dr["IdStudies"];
+                /*
+                com.CommandText = "execute EnrollStudent @index, @fn, @ln, @birth, @stud";
+                com.Parameters.AddWithValue("index", request.IndexNumber);
+                com.Parameters.AddWithValue("fn", request.FirstName);
+                com.Parameters.AddWithValue("ln", request.LastName);
+                com.Parameters.AddWithValue("birth", request.Birthdate);
+                com.Parameters.AddWithValue("stud", request.Studies);
+                success = com.ExecuteNonQuery();
+                */
 
-                    com.CommandText = "select IdEnrollment from enrollment where Semester=1 AND isStudies =@idStudies";
-                    com.Parameters.AddWithValue("idStudies", idStudies);
+                com.CommandText = "select IdStudy from studies where name = @studies";
+                com.Parameters.AddWithValue("studies", request.Studies);
+                com.Transaction = tran;
+                var dr = com.ExecuteScalar();
 
-                    var dr2 = com.ExecuteReader();
-
-                    if (!dr2.Read())
-                    {
-                        com.CommandText = "INSERT INTO Enrollments(Semester, IdStudy, StartDate) VALUES(@sem, @idstud, @sdate)";
-                        com.Parameters.AddWithValue("sem", 1);
-                        com.Parameters.AddWithValue("idstud", idStudies);
-                        com.Parameters.AddWithValue("sdate", DateTime.Now);
-                    }
-
-
-                    com.CommandText = "INSERT INTO Student(IndexNumber, FirstName, LastName, BirthDate) VALUES(@Index, @Fname, @Lname, @BDate)";
-                    com.Parameters.AddWithValue("Index", request.IndexNumber);
-                    com.Parameters.AddWithValue("Fname", request.FirstName);
-                    com.Parameters.AddWithValue("Lname", request.LastName);
-                    com.Parameters.AddWithValue("BDate", request.BirthDate);
-                    com.ExecuteNonQuery();
-
-                    tran.Commit();
-                }
-                catch (SqlException exc)
+                if (dr == null)
                 {
                     tran.Rollback();
+                    success = false;
                 }
+
+                int idStudy = (int)dr;
+                int idEnroll;
+                int idEnrollMax;
+                com.CommandText = "select MAX(IdEnrollment) from Enrollment";
+                com.Transaction = tran;
+                dr = com.ExecuteScalar();
+                idEnrollMax = (int)dr;
+
+                com.CommandText = "select IdEnrollment from Enrollment where Semester = 1 and IdStudy = @idstudy";
+                com.Parameters.AddWithValue("idstudy", idStudy);
+                com.Transaction = tran;
+                dr = com.ExecuteScalar();
+
+                if (dr == null)
+                {
+                    idEnroll = idEnrollMax + 1;
+                    DateTime start = DateTime.Today;
+
+                    com.CommandText = "insert into Enrollment(IdEnrollment, Semester, IdStudy, StartDate) values (@idenroll, 1, @idstudy, @date)";
+                    com.Parameters.AddWithValue("idenroll", idEnroll);
+                    com.Parameters.AddWithValue("date", start);
+                    com.Transaction = tran;
+                    com.ExecuteNonQuery();
+                }
+                else
+                {
+                    idEnroll = (int)dr;
+                }
+
+                com.CommandText = "select lastname from student where IndexNumber = @index";
+                com.Parameters.AddWithValue("index", st.IndexNumber);
+                com.Transaction = tran;
+                dr = com.ExecuteScalar();
+
+
+                if (dr != null)
+                {
+                    tran.Rollback();
+                    success = false;
+                }
+
+                com.CommandText = "insert into Student(IndexNumber, FirstName, LastName, BirthDate, IdEnrollment) values(@index, @fn, @ln, @birth, @idenroll2)";
+                com.Parameters.AddWithValue("fn", st.FirstName);
+                com.Parameters.AddWithValue("ln", st.LastName);
+                com.Parameters.AddWithValue("birth", st.Birthdate);
+                com.Parameters.AddWithValue("idenroll2", idEnroll);
+                com.Transaction = tran;
+                com.ExecuteNonQuery();
+
+                response.IndexNumber = st.IndexNumber;
+                response.IdEnrollment = idEnroll;
+                response.Semester = 1;
+                response.Studies = request.Studies;
+                response.StartDate = date;
+
+                tran.Commit();
+                success = true;
+
+            }
+            if (success)
+            {
+                return response;
+            }
+            else
+            {
+                return null;
             }
         }
 
@@ -126,6 +182,79 @@ namespace cw3_6.Services
             }
         }
 
+        public Student GetStudent(string IndexNumer)
+        {
+            const string ConString = "Data Source=db-mssql;Initial Catalog=s18985;Integrated Security=True";
+            var stud = new Student();
 
+            using (var con = new SqlConnection(ConString))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+
+                con.Open();
+
+                com.CommandText = "select * from Student where IndexNumber = @index";
+                com.Parameters.AddWithValue("index", IndexNumer);
+                var dr = com.ExecuteReader();
+
+                if (!dr.Read())
+                {
+                    return null;
+                }
+                else
+                {
+                    while (dr.Read())
+                    {
+                        stud.IndexNumber = dr["IndexNumber"].ToString();
+                        stud.FirstName = dr["FirstName"].ToString();
+                        stud.LastName = dr["LastName"].ToString();
+                        stud.Birthdate = (DateTime)dr["BirthDate"];
+                    }
+
+                    return stud;
+                }
+
+            }
+        }
+
+
+        public LoginResponse Login(LoginRequest request)
+        {
+            const string ConString = "Data Source=db-mssql;Initial Catalog=s18985;Integrated Security=True";
+            string Login = request.Login;
+            string Password = request.Password;
+            LoginResponse response = new LoginResponse();
+
+            using (var con = new SqlConnection(ConString))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+                con.Open();
+
+                com.CommandText = "select * from student where IndexNumber = @index;";
+                com.Parameters.AddWithValue("index", request.Login);
+                var dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    Login = dr["IndexNumber"].ToString();
+                    Password = dr["Password"].ToString();
+                }
+
+            }
+
+            if (request.Login == Login && request.Password == Password)
+            {
+                response.Login = Login;
+                response.Password = Password;
+
+                return response;
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+        }
     }
-}
